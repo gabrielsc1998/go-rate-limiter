@@ -1,0 +1,5 @@
+GET http://localhost:8080/teste
+
+API_KEY: ABC123
+
+X-Forwarded-For: 192.168.0.1
