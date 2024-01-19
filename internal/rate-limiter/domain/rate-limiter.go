@@ -1,8 +1,11 @@
 package rate_limiter
 
-import "time"
+import (
+	"time"
+)
 
 type RateLimiter struct {
+	ID            int
 	IP            string
 	Token         string
 	TotalRequests int
@@ -10,24 +13,40 @@ type RateLimiter struct {
 	FirstReqTime  time.Time
 	MaxRequests   int
 	BlockTime     float64
+	BlockedAt     time.Time
 }
 
 type RateLimiterConfig struct {
-	IP          string
-	Token       string
-	MaxRequests int
-	BlockTime   float64
+	ID            int
+	IP            string
+	Token         string
+	TotalRequests int
+	Blocked       bool
+	FirstReqTime  time.Time
+	MaxRequests   int
+	BlockTime     float64
+	BlockedAt     time.Time
 }
 
 func NewRateLimiter(config RateLimiterConfig) *RateLimiter {
-	return &RateLimiter{
+	rateLimiter := &RateLimiter{
+		ID:            config.ID,
 		IP:            config.IP,
 		Token:         config.Token,
-		FirstReqTime:  time.Now(),
-		TotalRequests: 1,
+		FirstReqTime:  config.FirstReqTime,
+		TotalRequests: config.TotalRequests,
+		Blocked:       config.Blocked,
 		MaxRequests:   config.MaxRequests,
 		BlockTime:     config.BlockTime,
+		BlockedAt:     config.BlockedAt,
 	}
+	if config.FirstReqTime.IsZero() {
+		rateLimiter.FirstReqTime = time.Now()
+	}
+	if config.TotalRequests == 0 {
+		rateLimiter.TotalRequests = 1
+	}
+	return rateLimiter
 }
 
 func (r *RateLimiter) AddRequest() {
@@ -41,6 +60,19 @@ func (r *RateLimiter) ClearRequests() {
 
 func (r *RateLimiter) SetBlocked() {
 	r.Blocked = true
+	r.BlockedAt = time.Now()
+}
+
+func (r *RateLimiter) IsTimeOfBlockFinished() bool {
+	if !r.Blocked {
+		return true
+	}
+	return time.Since(r.BlockedAt).Seconds() > r.BlockTime
+}
+
+func (r *RateLimiter) Unblock() {
+	r.Blocked = false
+	r.ClearRequests()
 }
 
 func (r *RateLimiter) IsMaxRequestsReached() bool {

@@ -42,16 +42,24 @@ func (r *RateLimiterMiddlewareInterface) Handle(ip string, token string) error {
 		if token != "" {
 			blockTime = r.configs.RateLimiterBlockTimeToken
 		}
-		r.repo.Save(rate_limiter.NewRateLimiter(rate_limiter.RateLimiterConfig{
+		err := r.repo.Save(rate_limiter.NewRateLimiter(rate_limiter.RateLimiterConfig{
 			IP:          ip,
 			Token:       token,
 			MaxRequests: maxReqs,
 			BlockTime:   blockTime,
 		}))
+		if err != nil {
+			return err
+		}
 		return nil
 	}
 
 	if rateLimiter.Blocked {
+		if rateLimiter.IsTimeOfBlockFinished() {
+			rateLimiter.Unblock()
+			r.repo.Save(rateLimiter)
+			return nil
+		}
 		return common_errors.ErrTooManyRequests
 	}
 	if rateLimiter.IsTimeOfOneSecondFinished() {

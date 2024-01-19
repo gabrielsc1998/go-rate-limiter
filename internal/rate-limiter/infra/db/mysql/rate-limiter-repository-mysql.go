@@ -1,64 +1,78 @@
-package rate_limiter_repo_redis
+package rate_limiter_repo_mysql
 
 import (
-	"context"
-	"encoding/json"
-
-	"github.com/gabrielsc1998/go-rate-limiter/internal/common/infra/db/redis"
+	"github.com/gabrielsc1998/go-rate-limiter/internal/common/infra/db/mysql"
 	rate_limiter "github.com/gabrielsc1998/go-rate-limiter/internal/rate-limiter/domain"
 )
 
-type RateLimiterRepositoryRedis struct {
-	client *redis.RedisClient
+type RateLimiterRepositoryMySQL struct {
+	client *mysql.MySQLDB
 }
 
-func NewRateLimiterRepositoryRedis(client *redis.RedisClient) *RateLimiterRepositoryRedis {
-	return &RateLimiterRepositoryRedis{
+func NewRateLimiterRepositoryMySQL(client *mysql.MySQLDB) *RateLimiterRepositoryMySQL {
+	return &RateLimiterRepositoryMySQL{
 		client: client,
 	}
 }
 
-func (r RateLimiterRepositoryRedis) GetByIP(ip string) *rate_limiter.RateLimiter {
-	return r.get(ip)
+func (r RateLimiterRepositoryMySQL) GetByIP(ip string) *rate_limiter.RateLimiter {
+	return r.get("ip", ip)
 }
 
-func (r RateLimiterRepositoryRedis) GetByToken(token string) *rate_limiter.RateLimiter {
-	return r.get(token)
+func (r RateLimiterRepositoryMySQL) GetByToken(token string) *rate_limiter.RateLimiter {
+	return r.get("token", token)
 }
 
-func (r RateLimiterRepositoryRedis) get(key string) *rate_limiter.RateLimiter {
-	ctx := context.Background()
-	rateLimiterFound, _ := r.client.Get(ctx, key)
-	if rateLimiterFound == "" {
+func (r RateLimiterRepositoryMySQL) get(key string, value string) *rate_limiter.RateLimiter {
+	var rateLimiterFound RateLimiterModel
+	err := r.client.DB.Where(key+" = ?", value).First(&rateLimiterFound).Error
+	if err != nil {
 		return nil
 	}
-	var rateLimiter rate_limiter.RateLimiter
-	json.Unmarshal([]byte(rateLimiterFound), &rateLimiter)
-	return &rateLimiter
+	return rate_limiter.NewRateLimiter(rate_limiter.RateLimiterConfig{
+		ID:            rateLimiterFound.ID,
+		IP:            rateLimiterFound.IP,
+		Token:         rateLimiterFound.Token,
+		MaxRequests:   rateLimiterFound.MaxRequests,
+		Blocked:       *rateLimiterFound.Blocked,
+		TotalRequests: rateLimiterFound.TotalRequests,
+		BlockTime:     rateLimiterFound.BlockTime,
+		FirstReqTime:  rateLimiterFound.FirstReqTime,
+		BlockedAt:     rateLimiterFound.BlockedAt,
+	})
 }
 
-func (r RateLimiterRepositoryRedis) Save(rateLimiter *rate_limiter.RateLimiter) error {
-	ctx := context.Background()
-	data, err := json.Marshal(rateLimiter)
-	if err != nil {
-		return err
-	}
-
-	var key string = rateLimiter.IP
+func (r RateLimiterRepositoryMySQL) Save(rateLimiter *rate_limiter.RateLimiter) error {
 	if rateLimiter.Token != "" {
-		key = rateLimiter.Token
+		rateLimiter.IP = ""
+		rateLimiterFound := r.get("token", rateLimiter.Token)
+		if rateLimiterFound != nil {
+			rateLimiterFound = rateLimiter
+			return r.client.DB.Updates(r.toModel(rateLimiterFound)).Error
+		}
+		return r.client.DB.Create(r.toModel(rateLimiter)).Error
 	}
 
-	// TODO: Refactor this
-	if rateLimiter.Blocked {
-		return r.client.Set(ctx, redis.RedisSetInput{
-			Key:    key,
-			Value:  data,
-			Expire: rateLimiter.BlockTime,
-		})
+	rateLimiter.Token = ""
+
+	rateLimiterFound := r.get("ip", rateLimiter.IP)
+	if rateLimiterFound != nil {
+		rateLimiterFound = rateLimiter
+		return r.client.DB.Updates(r.toModel(rateLimiterFound)).Error
 	}
-	return r.client.Set(ctx, redis.RedisSetInput{
-		Key:   key,
-		Value: data,
-	})
+	return r.client.DB.Create(r.toModel(rateLimiter)).Error
+}
+
+func (r RateLimiterRepositoryMySQL) toModel(rateLimiter *rate_limiter.RateLimiter) *RateLimiterModel {
+	return &RateLimiterModel{
+		ID:            rateLimiter.ID,
+		IP:            rateLimiter.IP,
+		Token:         rateLimiter.Token,
+		MaxRequests:   rateLimiter.MaxRequests,
+		Blocked:       &rateLimiter.Blocked,
+		TotalRequests: rateLimiter.TotalRequests,
+		BlockTime:     rateLimiter.BlockTime,
+		FirstReqTime:  rateLimiter.FirstReqTime,
+		BlockedAt:     rateLimiter.BlockedAt,
+	}
 }

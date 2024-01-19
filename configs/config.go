@@ -6,6 +6,11 @@ type Conf struct {
 	RedisAddr                 string   `mapstructure:"REDIS_ADDR"`
 	RedisPassword             string   `mapstructure:"REDIS_PASSWORD"`
 	RedisDB                   int      `mapstructure:"REDIS_DB"`
+	MySQLHost                 string   `mapstructure:"MYSQL_HOST"`
+	MySQLPort                 string   `mapstructure:"MYSQL_PORT"`
+	MySQLUser                 string   `mapstructure:"MYSQL_USER"`
+	MySQLPassword             string   `mapstructure:"MYSQL_PASSWORD"`
+	MySQLDatabase             string   `mapstructure:"MYSQL_DATABASE"`
 	RateLimiterTime           int64    `mapstructure:"RATE_LIMITER_TIME"`
 	WebServerPort             string   `mapstructure:"WEB_SERVER_PORT"`
 	RateLimiterMaxReqsIP      int      `mapstructure:"RATE_LIMITER_MAX_REQUESTS_PER_SECOND_FOR_IP"`

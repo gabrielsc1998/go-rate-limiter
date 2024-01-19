@@ -8,9 +8,11 @@ import (
 
 	"github.com/gabrielsc1998/go-rate-limiter/configs"
 	common_errors "github.com/gabrielsc1998/go-rate-limiter/internal/common/errors"
+	"github.com/gabrielsc1998/go-rate-limiter/internal/common/infra/db/mysql"
 	"github.com/gabrielsc1998/go-rate-limiter/internal/common/infra/db/redis"
 	"github.com/gabrielsc1998/go-rate-limiter/internal/common/infra/webserver"
 	rate_limiter_repo "github.com/gabrielsc1998/go-rate-limiter/internal/rate-limiter/infra/db"
+	rate_limiter_repo_mysql "github.com/gabrielsc1998/go-rate-limiter/internal/rate-limiter/infra/db/mysql"
 	rate_limiter_middleware "github.com/gabrielsc1998/go-rate-limiter/internal/rate-limiter/infra/middleware"
 )
 
@@ -35,17 +37,43 @@ func main() {
 		Password: config.RedisPassword,
 		DB:       config.RedisDB,
 	})
-
 	defer redisClient.Close()
 
-	rateLimiterRepository, err := rate_limiter_repo.NewRateLimiterRepository(rate_limiter_repo.RateLimiterRepositoryConfig{
-		Repo:   "redis",
-		Inject: redisClient,
-	})
-
-	rateLimiterMiddleware := rate_limiter_middleware.NewRateLimiterMiddleware(config, configTokens, rateLimiterRepository)
-
 	redisClient.ClearAll(context.Background())
+
+	// rateLimiterRepositoryRedis, err := rate_limiter_repo.NewRateLimiterRepository(rate_limiter_repo.RateLimiterRepositoryConfig{
+	// 	Repo:   "redis",
+	// 	Inject: redisClient,
+	// })
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	mysqlDB := mysql.NewMySQLDBConnection()
+	mysqlDB.Connect(mysql.MySQLConnectionOptions{
+		Host:     config.MySQLHost,
+		Port:     config.MySQLPort,
+		User:     config.MySQLUser,
+		Password: config.MySQLPassword,
+		Database: config.MySQLDatabase,
+	})
+	err = mysqlDB.DB.AutoMigrate(
+		&rate_limiter_repo_mysql.RateLimiterModel{},
+	)
+	if err != nil {
+		panic(err)
+	}
+	defer mysqlDB.Close()
+
+	rateLimiterRepositoryMySQL, err := rate_limiter_repo.NewRateLimiterRepository(rate_limiter_repo.RateLimiterRepositoryConfig{
+		Repo:   "mysql",
+		Inject: mysqlDB,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	rateLimiterMiddleware := rate_limiter_middleware.NewRateLimiterMiddleware(config, configTokens, rateLimiterRepositoryMySQL)
 
 	if err != nil {
 		panic(err)
