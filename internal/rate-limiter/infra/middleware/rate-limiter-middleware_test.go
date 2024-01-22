@@ -12,14 +12,13 @@ import (
 )
 
 var repo *rate_limiter_repo_redis.RateLimiterRepositoryRedis
-var middleware *RateLimiterMiddlewareInterface
 
-func init() {
+func setupMiddleware() *RateLimiterMiddlewareInterface {
 	config := redis.RedisClientConfig{Addr: "redis:6379", Password: "", DB: 0}
 	client := redis.NewRedisClient(config)
 	client.ClearAll(context.Background())
 	repo = rate_limiter_repo_redis.NewRateLimiterRepositoryRedis(client)
-	middleware = NewRateLimiterMiddleware(&configs.Conf{
+	return NewRateLimiterMiddleware(&configs.Conf{
 		RateLimiterMaxReqsIP:      3,
 		RateLimiterBlockTimeIP:    1,
 		RateLimiterBlockTimeToken: 1,
@@ -28,6 +27,7 @@ func init() {
 }
 
 func TestHandleFirstReqIP(t *testing.T) {
+	middleware := setupMiddleware()
 	err := middleware.Handle("127.0.0.1", "")
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
@@ -43,6 +43,7 @@ func TestHandleFirstReqIP(t *testing.T) {
 }
 
 func TestHandleFirstReqToken(t *testing.T) {
+	middleware := setupMiddleware()
 	err := middleware.Handle("127.0.0.1", "token")
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
@@ -60,6 +61,8 @@ func TestHandleFirstReqToken(t *testing.T) {
 }
 
 func TestHandleAddReqIP(t *testing.T) {
+	middleware := setupMiddleware()
+
 	for i := 0; i < 3; i++ {
 		err := middleware.Handle("127.0.0.1", "")
 		if err != nil {
@@ -80,6 +83,8 @@ func TestHandleAddReqIP(t *testing.T) {
 }
 
 func TestHandleAddReqToken(t *testing.T) {
+	middleware := setupMiddleware()
+
 	for i := 0; i < 3; i++ {
 		err := middleware.Handle("127.0.0.1", "token")
 		if err != nil {
@@ -100,6 +105,8 @@ func TestHandleAddReqToken(t *testing.T) {
 }
 
 func TestMaxRequestForIP(t *testing.T) {
+	middleware := setupMiddleware()
+
 	for i := 0; i < 4; i++ {
 		err := middleware.Handle("127.0.0.1", "")
 		if i < 3 {
@@ -123,6 +130,8 @@ func TestMaxRequestForIP(t *testing.T) {
 }
 
 func TestMaxRequestForToken(t *testing.T) {
+	middleware := setupMiddleware()
+
 	for i := 0; i < 4; i++ {
 		err := middleware.Handle("127.0.0.1", "token")
 		if i < 3 {
@@ -151,6 +160,8 @@ func TestMaxRequestForToken(t *testing.T) {
 }
 
 func TestMaxRequestForIPAfterBlockTime(t *testing.T) {
+	middleware := setupMiddleware()
+
 	for i := 0; i < 4; i++ {
 		err := middleware.Handle("127.0.0.1", "")
 		if i < 3 {
@@ -189,6 +200,8 @@ func TestMaxRequestForIPAfterBlockTime(t *testing.T) {
 }
 
 func TestMaxRequestForTokenAfterBlockTime(t *testing.T) {
+	middleware := setupMiddleware()
+
 	for i := 0; i < 4; i++ {
 		err := middleware.Handle("127.0.0.1", "token")
 		if i < 3 {
