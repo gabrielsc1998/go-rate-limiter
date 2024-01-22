@@ -16,12 +16,12 @@ type RateLimiterRepository interface {
 	Save(rateLimiter *rate_limiter.RateLimiter) error
 }
 
-type RateLimiterRepositoryConfig struct {
+type Config struct {
 	Repo   string
 	Inject interface{}
 }
 
-func NewRateLimiterRepository(config RateLimiterRepositoryConfig) (RateLimiterRepository, error) {
+func NewRateLimiterRepository(config Config) (RateLimiterRepository, error) {
 	if config.Repo == "redis" {
 		repo := rate_limiter_repo_redis.NewRateLimiterRepositoryRedis(config.Inject.(*redis.RedisClient))
 		return repo, nil

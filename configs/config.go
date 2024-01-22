@@ -11,7 +11,7 @@ type Conf struct {
 	MySQLUser                 string   `mapstructure:"MYSQL_USER"`
 	MySQLPassword             string   `mapstructure:"MYSQL_PASSWORD"`
 	MySQLDatabase             string   `mapstructure:"MYSQL_DATABASE"`
-	RateLimiterTime           int64    `mapstructure:"RATE_LIMITER_TIME"`
+	PersistenceMechanism      string   `mapstructure:"PERSISTENCE_MECHANISM"`
 	WebServerPort             string   `mapstructure:"WEB_SERVER_PORT"`
 	RateLimiterMaxReqsIP      int      `mapstructure:"RATE_LIMITER_MAX_REQUESTS_PER_SECOND_FOR_IP"`
 	RateLimiterBlockTimeIP    float64  `mapstructure:"RATE_LIMITER_BLOCK_TIME_FOR_IP"`

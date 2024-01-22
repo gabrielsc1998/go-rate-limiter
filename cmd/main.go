@@ -32,48 +32,12 @@ func main() {
 		configTokens[parts[0]] = maxReqs
 	}
 
-	redisClient := redis.NewRedisClient(redis.RedisClientConfig{
-		Addr:     config.RedisAddr,
-		Password: config.RedisPassword,
-		DB:       config.RedisDB,
-	})
-	defer redisClient.Close()
-
-	redisClient.ClearAll(context.Background())
-
-	// rateLimiterRepositoryRedis, err := rate_limiter_repo.NewRateLimiterRepository(rate_limiter_repo.RateLimiterRepositoryConfig{
-	// 	Repo:   "redis",
-	// 	Inject: redisClient,
-	// })
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	mysqlDB := mysql.NewMySQLDBConnection()
-	mysqlDB.Connect(mysql.MySQLConnectionOptions{
-		Host:     config.MySQLHost,
-		Port:     config.MySQLPort,
-		User:     config.MySQLUser,
-		Password: config.MySQLPassword,
-		Database: config.MySQLDatabase,
-	})
-	err = mysqlDB.DB.AutoMigrate(
-		&rate_limiter_repo_mysql.RateLimiterModel{},
-	)
-	if err != nil {
-		panic(err)
-	}
-	defer mysqlDB.Close()
-
-	rateLimiterRepositoryMySQL, err := rate_limiter_repo.NewRateLimiterRepository(rate_limiter_repo.RateLimiterRepositoryConfig{
-		Repo:   "mysql",
-		Inject: mysqlDB,
-	})
+	rateLimiterRepository, err := setupRateLimiterRepository(config)
 	if err != nil {
 		panic(err)
 	}
 
-	rateLimiterMiddleware := rate_limiter_middleware.NewRateLimiterMiddleware(config, configTokens, rateLimiterRepositoryMySQL)
+	rateLimiterMiddleware := rate_limiter_middleware.NewRateLimiterMiddleware(config, configTokens, rateLimiterRepository)
 
 	if err != nil {
 		panic(err)
@@ -93,6 +57,7 @@ func main() {
 					return
 				}
 				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(err.Error()))
 				return
 			}
 			h.ServeHTTP(w, r)
@@ -123,4 +88,51 @@ func ReadUserIP(r *http.Request) string {
 	}
 
 	return IPAddress
+}
+
+func setupRateLimiterRepository(config *configs.Conf) (rate_limiter_repo.RateLimiterRepository, error) {
+	// ================== Redis ================== //
+
+	redisClient := redis.NewRedisClient(redis.RedisClientConfig{
+		Addr:     config.RedisAddr,
+		Password: config.RedisPassword,
+		DB:       config.RedisDB,
+	})
+	// defer redisClient.Close()
+	redisClient.ClearAll(context.Background())
+
+	// ================== MySQL ================== //
+
+	mysqlDB := mysql.NewMySQLDBConnection()
+	mysqlDB.Connect(mysql.MySQLConnectionOptions{
+		Host:     config.MySQLHost,
+		Port:     config.MySQLPort,
+		User:     config.MySQLUser,
+		Password: config.MySQLPassword,
+		Database: config.MySQLDatabase,
+	})
+	err := mysqlDB.DB.AutoMigrate(
+		&rate_limiter_repo_mysql.RateLimiterModel{},
+	)
+	if err != nil {
+		panic(err)
+	}
+	// defer mysqlDB.Close()
+
+	// ================== Rate Limiter Repository ================== //
+
+	switch config.PersistenceMechanism {
+	case "redis":
+		return rate_limiter_repo.NewRateLimiterRepository(rate_limiter_repo.Config{
+			Repo:   "redis",
+			Inject: redisClient,
+		})
+	case "mysql":
+		return rate_limiter_repo.NewRateLimiterRepository(rate_limiter_repo.Config{
+			Repo:   "mysql",
+			Inject: mysqlDB,
+		})
+	default:
+		panic("invalid persistence mechanism")
+	}
 }
