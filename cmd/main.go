@@ -53,9 +53,10 @@ func main() {
 		})
 	})
 
-	webserver.Get("/teste", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello World"))
+	webserver.Get("/test", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
 	})
+
 	webserver.Start()
 }
 

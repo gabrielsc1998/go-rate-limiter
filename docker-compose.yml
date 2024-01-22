@@ -33,3 +33,10 @@ services:
       mysql:
         condition: service_healthy
     restart: always
+
+  fortio:
+    image: fortio/fortio
+    container_name: rate-limiter-fortio
+    ports:
+      - "8079:8080"
+    restart: always

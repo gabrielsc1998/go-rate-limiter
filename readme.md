@@ -26,3 +26,12 @@ This is a simple rate limiter written in Go and is implemented as a middleware a
 
 - You can use the test api file in ./tests/api.http to test the server (you need have installed the REST Client (
 humao.rest-client) on VSCode to use this file).
+
+### How to run the load test with fortio
+
+- Run `docker-compose up`;
+- Access http://localhost:8079/fortio;
+- In `URL to test` field, put `http://app:8080/test`;
+- Adjusts the parameters as you want and click in `Start` button.
+- See the results on graph or in the files.
+

@@ -1,23 +1,23 @@
 ### Call with default IP
 
-GET http://localhost:8080/teste
+GET http://localhost:8080/test
 
 ### Call with another IP
 
-GET http://localhost:8080/teste
+GET http://localhost:8080/test
 X-Forwarded-For: 192.168.0.1
 
 ### Call with token ABC123
 
-GET http://localhost:8080/teste
+GET http://localhost:8080/test
 API_KEY: ABC123
 
 ### Call with token DEF456
 
-GET http://localhost:8080/teste
+GET http://localhost:8080/test
 API_KEY: DEF456
 
 ### Call with token GHI789
 
-GET http://localhost:8080/teste
+GET http://localhost:8080/test
 API_KEY: GHI789
