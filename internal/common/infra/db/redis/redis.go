@@ -36,13 +36,13 @@ func (r *RedisClient) ClearAll(ctx context.Context) error {
 	return r.client.FlushAll(ctx).Err()
 }
 
-type RedisSetInput struct {
+type Input struct {
 	Key    string
 	Value  interface{}
 	Expire float64
 }
 
-func (r *RedisClient) Set(ctx context.Context, input RedisSetInput) error {
+func (r *RedisClient) Set(ctx context.Context, input Input) error {
 	err := r.client.Set(ctx, input.Key, input.Value, 0).Err()
 	if err != nil {
 		return err

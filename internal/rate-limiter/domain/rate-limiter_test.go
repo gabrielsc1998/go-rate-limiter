@@ -116,8 +116,7 @@ func TestIsMaxRequestsReached(t *testing.T) {
 func TestIsTimeOfOneSecondFinished(t *testing.T) {
 	config := RateLimiterConfig{IP: "127.0.0.1", Token: "123456", MaxRequests: 2}
 	limiter := NewRateLimiter(config)
-
-	time.Sleep(2 * time.Second)
+	limiter.FirstReqTime = time.Now().Add(-2 * time.Second)
 
 	if limiter.IsTimeOfOneSecondFinished() != true {
 		t.Errorf("Expected IsTimeOfOneSecondFinished to be true, got '%t'", limiter.IsTimeOfOneSecondFinished())
@@ -127,8 +126,7 @@ func TestIsTimeOfOneSecondFinished(t *testing.T) {
 func TestIsTimeOfBlockFinished(t *testing.T) {
 	config := RateLimiterConfig{Blocked: true, BlockTime: 1}
 	limiter := NewRateLimiter(config)
-
-	time.Sleep(2 * time.Second)
+	limiter.BlockedAt = time.Now().Add(-2 * time.Second)
 
 	if limiter.IsTimeOfBlockFinished() != true {
 		t.Errorf("Expected IsTimeOfOneSecondFinished to be true, got '%t'", limiter.IsTimeOfOneSecondFinished())

@@ -51,13 +51,13 @@ func (r RateLimiterRepositoryRedis) Save(rateLimiter *rate_limiter.RateLimiter) 
 
 	// TODO: Refactor this
 	if rateLimiter.Blocked {
-		return r.client.Set(ctx, redis.RedisSetInput{
+		return r.client.Set(ctx, redis.Input{
 			Key:    key,
 			Value:  data,
 			Expire: rateLimiter.BlockTime,
 		})
 	}
-	return r.client.Set(ctx, redis.RedisSetInput{
+	return r.client.Set(ctx, redis.Input{
 		Key:   key,
 		Value: data,
 	})
