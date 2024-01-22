@@ -8,16 +8,14 @@ import (
 )
 
 type RateLimiterMiddlewareInterface struct {
-	configs      *configs.Conf
-	repo         rate_limiter_repo.RateLimiterRepository
-	configTokens map[string]int
+	configs *configs.Conf
+	repo    rate_limiter_repo.RateLimiterRepository
 }
 
-func NewRateLimiterMiddleware(configs *configs.Conf, configTokens map[string]int, repo rate_limiter_repo.RateLimiterRepository) *RateLimiterMiddlewareInterface {
+func NewRateLimiterMiddleware(configs *configs.Conf, repo rate_limiter_repo.RateLimiterRepository) *RateLimiterMiddlewareInterface {
 	return &RateLimiterMiddlewareInterface{
-		repo:         repo,
-		configs:      configs,
-		configTokens: configTokens,
+		repo:    repo,
+		configs: configs,
 	}
 }
 
@@ -33,7 +31,7 @@ func (r *RateLimiterMiddlewareInterface) Handle(ip string, token string) error {
 	if rateLimiter == nil {
 		maxReqs := r.configs.RateLimiterMaxReqsIP
 		if token != "" {
-			maxReqs = r.configTokens[token]
+			maxReqs = r.configs.ConfigTokens[token]
 			if maxReqs == 0 {
 				maxReqs = 10
 			}

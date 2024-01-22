@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/gabrielsc1998/go-rate-limiter/configs"
@@ -22,22 +21,12 @@ func main() {
 		panic(err)
 	}
 
-	configTokens := make(map[string]int)
-	for _, e := range config.RateLimiterTokens {
-		parts := strings.Split(e, ":")
-		maxReqs, err := strconv.Atoi(parts[1])
-		if err != nil {
-			panic(err)
-		}
-		configTokens[parts[0]] = maxReqs
-	}
-
 	rateLimiterRepository, err := setupRateLimiterRepository(config)
 	if err != nil {
 		panic(err)
 	}
 
-	rateLimiterMiddleware := rate_limiter_middleware.NewRateLimiterMiddleware(config, configTokens, rateLimiterRepository)
+	rateLimiterMiddleware := rate_limiter_middleware.NewRateLimiterMiddleware(config, rateLimiterRepository)
 
 	if err != nil {
 		panic(err)
