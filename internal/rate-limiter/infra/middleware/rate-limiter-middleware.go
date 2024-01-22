@@ -64,6 +64,7 @@ func (r *RateLimiterMiddlewareInterface) Handle(ip string, token string) error {
 	}
 	if rateLimiter.IsTimeOfOneSecondFinished() {
 		rateLimiter.ClearRequests()
+		rateLimiter.AddRequest()
 		r.repo.Save(rateLimiter)
 	} else if rateLimiter.IsMaxRequestsReached() {
 		rateLimiter.SetBlocked()

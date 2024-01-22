@@ -51,11 +51,13 @@ func NewRateLimiter(config RateLimiterConfig) *RateLimiter {
 
 func (r *RateLimiter) AddRequest() {
 	r.TotalRequests++
+	if r.TotalRequests == 1 {
+		r.FirstReqTime = time.Now()
+	}
 }
 
 func (r *RateLimiter) ClearRequests() {
-	r.TotalRequests = 1
-	r.FirstReqTime = time.Now()
+	r.TotalRequests = 0
 }
 
 func (r *RateLimiter) SetBlocked() {
