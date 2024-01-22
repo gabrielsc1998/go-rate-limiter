@@ -2,7 +2,7 @@
 
 ### Description
 
-This is a simple rate limiter written in Go. It uses a token bucket algorithm to limit the rate of requests. The rate limiter is implemented as a middleware and can be used with any HTTP server.
+This is a simple rate limiter written in Go and is implemented as a middleware and can be used with any HTTP server.
 
 ### How to config
 
@@ -25,4 +25,4 @@ This is a simple rate limiter written in Go. It uses a token bucket algorithm to
 ### How to test
 
 - You can use the test api file in ./tests/api.http to test the server (you need have installed the REST Client (
-humao.rest-client) no VSCode to use this file).
+humao.rest-client) on VSCode to use this file).
