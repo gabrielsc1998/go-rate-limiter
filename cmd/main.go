@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	"github.com/gabrielsc1998/go-rate-limiter/configs"
 	common_errors "github.com/gabrielsc1998/go-rate-limiter/internal/common/errors"
+	"github.com/gabrielsc1998/go-rate-limiter/internal/common/helpers"
 	"github.com/gabrielsc1998/go-rate-limiter/internal/common/infra/db/mysql"
 	"github.com/gabrielsc1998/go-rate-limiter/internal/common/infra/db/redis"
 	"github.com/gabrielsc1998/go-rate-limiter/internal/common/infra/webserver"
@@ -36,7 +36,7 @@ func main() {
 
 	webserver.AddMiddleware(func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ip := ReadUserIP(r)
+			ip := helpers.GetIPFromRequest(r)
 			token := r.Header.Get("API_KEY")
 			err := rateLimiterMiddleware.Handle(ip, token)
 			if err != nil {
@@ -57,26 +57,6 @@ func main() {
 		w.Write([]byte("Hello World"))
 	})
 	webserver.Start()
-}
-
-func ReadUserIP(r *http.Request) string {
-	IPAddress := r.Header.Get("X-Real-Ip")
-	if IPAddress != "" {
-		return IPAddress
-	}
-
-	IPAddress = r.Header.Get("X-Forwarded-For")
-	if IPAddress != "" {
-		return IPAddress
-	}
-
-	IPAddress = r.RemoteAddr
-	if IPAddress != "" {
-		splittedIp := strings.Split(IPAddress, ":")
-		return splittedIp[0]
-	}
-
-	return IPAddress
 }
 
 func setupRateLimiterRepository(config *configs.Conf) (rate_limiter_repo.RateLimiterRepository, error) {
